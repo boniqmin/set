@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head>
+    <link rel="stylesheet" href="/grid-e360853f51bd9936.css">
+    <link rel="stylesheet" href="/shapes-94ec8e31ea7cc83d.css">
+    <!-- <link data-trunk rel="copy-dir" href="cards"> -->
+
+<link rel="preload" href="/set_yew-37bf4f80eda9e98c_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
+<link rel="modulepreload" href="/set_yew-37bf4f80eda9e98c.js"></head>
+
+<body>
+
+
+
+<script type="module">import init from '/set_yew-37bf4f80eda9e98c.js';init('/set_yew-37bf4f80eda9e98c_bg.wasm');</script><script>(function () {
+    var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var url = protocol + '//' + window.location.host + '/_trunk/ws';
+    var poll_interval = 5000;
+    var reload_upon_connect = () => {
+        window.setTimeout(
+            () => {
+                // when we successfully reconnect, we'll force a
+                // reload (since we presumably lost connection to
+                // trunk due to it being killed, so it will have
+                // rebuilt on restart)
+                var ws = new WebSocket(url);
+                ws.onopen = () => window.location.reload();
+                ws.onclose = reload_upon_connect;
+            },
+            poll_interval);
+    };
+
+    var ws = new WebSocket(url);
+    ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg.reload) {
+            window.location.reload();
+        }
+    };
+    ws.onclose = reload_upon_connect;
+})()
+</script></body></html>
