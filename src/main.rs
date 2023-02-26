@@ -1,7 +1,13 @@
 mod set;
 use crate::set::{Card, CardSelection, Deck};
+// use futures::executor::block_on;
+// use futures::stream::Stream;
 use std::mem;
+// use std::time;
+// use std::time::Duration;
+// use wasm_timer::{Delay, Instant, Interval};
 use yew::prelude::*;
+
 // mod rendercards;
 // use crate::rendercards::CardImg;
 
@@ -13,6 +19,7 @@ enum Msg {
     CardSelected(usize),
     Reset,
     Expand,
+    FullSelection,
 }
 
 // fn app() -> Html {
@@ -58,7 +65,19 @@ fn card_img(card: &CardProp) -> Html {
 
     html! {<svg height={"200"} width={"200"}> // style="background-color:PaleGreen">
     <rect class={shadow} x="10" y="10" rx="20" ry="20" width="180" height="180"
-    style="fill:WhiteSmoke;stroke:SlateGray;stroke-width:5" />{shapes}</svg>}
+    style="fill:WhiteSmoke;stroke:SlateGray;stroke-width:5" />{shapes}
+    {
+        if card.selected {
+            html!{<path fill-rule="evenodd" d="M-10,-10  h220 v220 h-220 z
+            M7,30 v140 a 23 23 0 0 0 23 23 h140 a 23 23 0 0 0 23 -23
+             v-140 a 23 23 0 0 0 -23 -23 h-140 a 23 23 0 0 0 -23 23 z" class="shadow-pressed" stroke="WhiteSmoke"
+            fill="WhiteSmoke" />}
+        }
+        else {
+            html!{}
+        }
+    }
+    </svg>}
 }
 
 fn shape_svg(card: &Card, translate_x: f32, translate_y: f32, scale: f32) -> Html {
@@ -162,6 +181,16 @@ impl Board {
     }
 }
 
+fn fibo(n: u128) -> u128 {
+    if n == 0 {
+        return 0;
+    } else if n == 1 {
+        return 1;
+    } else {
+        return fibo(n - 1) + fibo(n - 2);
+    }
+}
+
 impl Component for Board {
     type Message = Msg;
     type Properties = ();
@@ -199,6 +228,7 @@ impl Component for Board {
         let expand_onclick = _ctx.link().callback(|_| Msg::Expand);
         // let card0 = self.cards[0];
         html! {<>
+        <h1> {"Welcome to my set clone!"}  </h1>
         <div class="grid-container">{grid}</div>
             <p>{format!("Number of sets found: {}", self.num_sets)}</p>
             // <CardImg card={self.cards[0].clone()} />
@@ -218,22 +248,15 @@ impl Component for Board {
             Msg::CardSelected(card) => {
                 self.card_selection.add_next_toggle(card).unwrap();
                 if self.card_selection.is_full() {
-                    if self.card_selection.is_set(&self.cards) {
-                        self.num_sets += 1;
-                        if self.times_expanded > 0 {
-                            self.card_selection.remove_cards(&mut self.cards);
-                            self.times_expanded -= 1;
-                        } else {
-                            self.card_selection
-                                .replace_cards_from_deck(&mut self.cards, &mut self.deck);
-                        }
-                        // if self.deck.is_empty() {
-                        //     self.num_sets = 0;
-                        //     self.deck = Deck::new_shuffled();
-                        // }
-                    }
-
-                    self.card_selection.clear();
+                    let handle_full_selection = _ctx.link().callback(|_: i64| {
+                        // log::info!("Time before: {:?}", Instant::now());
+                        // fibo(38);
+                        // sleep(time::Duration::from_secs(2));
+                        // let _ = block_on(Delay::new(Duration::from_secs(2)));
+                        // log::info!("Time after: {:?}", Instant::now());
+                        Msg::FullSelection
+                    });
+                    handle_full_selection.emit(0);
                 }
                 // if self.deck.is_empty() {
                 //     self.finished = true; // TODO: make screen for when game is finished
@@ -254,10 +277,31 @@ impl Component for Board {
                 self.expand();
                 true
             }
+
+            Msg::FullSelection => {
+                if self.card_selection.is_set(&self.cards) {
+                    self.num_sets += 1;
+                    if self.times_expanded > 0 {
+                        self.card_selection.remove_cards(&mut self.cards);
+                        self.times_expanded -= 1;
+                    } else {
+                        self.card_selection
+                            .replace_cards_from_deck(&mut self.cards, &mut self.deck);
+                    }
+                    // if self.deck.is_empty() {
+                    //     self.num_sets = 0;
+                    //     self.deck = Deck::new_shuffled();
+                    // }
+                }
+
+                self.card_selection.clear();
+                true
+            }
         }
     }
 }
 
 fn main() {
+    wasm_logger::init(wasm_logger::Config::default());
     yew::start_app::<Board>();
 }

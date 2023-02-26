@@ -20,6 +20,10 @@
     /* border: 1px solid rgba(0, 0, 0, 0.8); */
     /* padding: 5px; */
     font-size: 15px;
+    background-color: whitesmoke;
+    border-color: whitesmoke;
+    padding: 0;
+    border: none;
 }
 
 .grid-item.selected {
@@ -28,6 +32,10 @@
     /* border: 1px solid rgba(0, 0, 0, 0.8); */
     /* padding: 5px; */
     font-size: 15px;
+    background-color: whitesmoke;
+    border-color: whitesmoke;
+    padding: 0;
+    border: none;
 }
 
 /* .square {

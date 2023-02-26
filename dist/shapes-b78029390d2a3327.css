@@ -4,10 +4,16 @@
     /* Similar syntax to box-shadow */
 }
 
-.shadow-in {
+/* .shadow-in {
     -webkit-box-shadow: 0px 0px 108px 7px #000000;
     -moz-box-shadow: 0px 0px 108px 7px #000000;
     -ms-box-shadow: 0px 0px 108px 7px #000000;
     -o-box-shadow: 0px 0px 108px 7px #000000;
     box-shadow: 0px 0px 108px 7px #000000;
+} */
+
+.shadow-pressed {
+    -webkit-filter: drop-shadow(5px 5px 5px rgba(0, 0, 0, 0.7));
+    filter: drop-shadow(5px 5px 5px rgba(0, 0, 0, 0.7));
+    /* Similar syntax to box-shadow */
 }
