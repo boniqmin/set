@@ -37,6 +37,9 @@ impl CardSelection {
     // }
 
     pub fn add_next_toggle(&mut self, next: usize) -> Result<(), FullError> {
+        // given index of card "next", this method either removes that card from the
+        // selection if present, otherwise adds it to the selection.
+        // returns FullError if next is not in selection and selection is full
         if self.is_selected(next) {
             for card in self.card_nums.iter_mut() {
                 // remove all instances of next
@@ -75,6 +78,7 @@ impl CardSelection {
     // }
 
     pub fn replace_cards_from_deck(&self, cards: &mut Vec<Card>, deck: &mut Deck) {
+        // replaces the cards in "cards" at the indices of the selction by new ones from the deck
         let mut new_card_opts: Vec<Option<Card>> =
             cards.iter().map(|card| Some(card.clone())).collect();
         for card_num in &self.card_nums {
@@ -83,6 +87,8 @@ impl CardSelection {
                 new_card_opts[*i] = newcard; //newcard.as_ref();
             }
         }
+
+        // Filters out the None variants and unpacks the Some variants into cards
         *cards = new_card_opts
             .iter()
             .filter_map(|card| card.clone())
@@ -101,31 +107,39 @@ impl CardSelection {
 
     // TODO: make this safe
     pub fn remove_cards(&self, cards: &mut Vec<Card>) {
-        // for card_num in &self.card_nums {
-        //     if let Some(i) = card_num {
-        //         if i >= 12 { //TODO: magic number
-        //             cards.pop();
-        //         } else {
-        //         cards[*i] = cards.pop().unwrap(); // take from end and reinsert in free spot
-        //     }
-        // }
-        // cards.retain(||)
+        // this method removes the cards in the selection from the "cards" Vec, and fills
         let mut valid_card_nums = self
             .card_nums
             .iter()
             .filter_map(|num| num.as_ref())
             .collect::<Vec<&usize>>();
-        valid_card_nums.sort_by(|a, b| b.cmp(a));
-        for num in valid_card_nums {
-            if num >= &(cards.len() - 3) {
-                // if it's one of the new cards, just remove it
-                //TODO: magic number
-                cards.pop();
-            } else {
-                // otherwise replace it. Sorting guarantees you never replace by a selected card
-                cards[*num] = cards.pop().unwrap();
+        valid_card_nums.sort(); // sort_by(|a, b| b.cmp(a));
+
+        let mut cards_to_be_moved = Vec::new();
+        for i in (cards.len() - 3)..cards.len() {
+            if !valid_card_nums.contains(&&i) {
+                cards_to_be_moved.push(cards[i].clone());
             }
         }
+        log::info!("Cards in ctbm: {:?}", cards_to_be_moved);
+
+        let new_cards = cards
+            .clone()
+            .iter()
+            .enumerate()
+            .filter_map(|(i, card)| {
+                if i >= cards.len() - 3 {
+                    None
+                } else {
+                    if valid_card_nums.contains(&&i) {
+                        Some(cards_to_be_moved.pop().unwrap())
+                    } else {
+                        Some(card.clone())
+                    }
+                }
+            })
+            .collect::<Vec<Card>>();
+        *cards = new_cards;
     }
 
     pub fn clear(&mut self) {

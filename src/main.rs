@@ -220,7 +220,7 @@ impl Component for Board {
                 }
 
                 // html! {<button class={class} onclick={on_card_click}><img src={format!("cards/{card}.png")} alt={format!("{card}")}/></button>}
-                html! {<button class={class} onclick={on_card_click}><CardImg card={card.clone()} selected={self.card_selection.is_selected(i)}/></button>}
+                html! {<button class={class} onclick={on_card_click}><CardImg card={card.clone()} selected={self.card_selection.is_selected(i)}/>{i}</button>}
             })
             .collect::<Html>();
 
@@ -303,5 +303,6 @@ impl Component for Board {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    yew::start_app::<Board>();
+    // yew::start_app::<Board>();
+    yew::Renderer::<Board>::new().render();
 }
