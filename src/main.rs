@@ -1,11 +1,7 @@
 mod set;
-use crate::set::{Card, CardSelection, Deck};
-// use futures::executor::block_on;
-// use futures::stream::Stream;
+use gloo_timers::callback::Timeout;
+use set::{is_set, Card, CardSelection, Deck};
 use std::mem;
-// use std::time;
-// use std::time::Duration;
-// use wasm_timer::{Delay, Instant, Interval};
 use yew::prelude::*;
 
 // mod rendercards;
@@ -58,6 +54,7 @@ fn card_img(card: &CardProp) -> Html {
     };
 
     let shadow = if card.selected {
+        // TODO: does this still do anything?
         "shadow-in"
     } else {
         "shadow-out"
@@ -71,7 +68,8 @@ fn card_img(card: &CardProp) -> Html {
             html!{<path fill-rule="evenodd" d="M-10,-10  h220 v220 h-220 z
             M7,30 v140 a 23 23 0 0 0 23 23 h140 a 23 23 0 0 0 23 -23
              v-140 a 23 23 0 0 0 -23 -23 h-140 a 23 23 0 0 0 -23 23 z" class="shadow-pressed" stroke="WhiteSmoke"
-            fill="WhiteSmoke" />}
+            fill="WhiteSmoke" />} // creates the shape that is inside the square but outside the rounded rect
+            // so that we can cast a shadow on the rect
         }
         else {
             html!{}
@@ -179,15 +177,23 @@ impl Board {
             }
         }
     }
-}
 
-fn fibo(n: u128) -> u128 {
-    if n == 0 {
-        return 0;
-    } else if n == 1 {
-        return 1;
-    } else {
-        return fibo(n - 1) + fibo(n - 2);
+    fn count_sets(&self) -> u32 {
+        // If this is too slow, it is possible to do a O(n^2) implementation if we do a hash lookup
+        // in the cards vector: loop over pairs of cards and check whether the set-completing card
+        // is in the cards vector
+        let mut set_count = 0;
+        for i in 0..self.cards.len() {
+            for j in 0..i {
+                for k in 0..j {
+                    if is_set(&self.cards[i], &self.cards[j], &self.cards[k]) {
+                        set_count += 1;
+                        // log::info!("    {} {} {}", i, j, k)
+                    }
+                }
+            }
+        }
+        set_count
     }
 }
 
@@ -199,7 +205,7 @@ impl Component for Board {
         Self::new()
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let grid = self
             .cards
             .iter()
@@ -211,7 +217,7 @@ impl Component for Board {
                 //     Callback::from(move |_| on_click.emit(card.clone()))
                 // };
 
-                let on_card_click = _ctx.link().callback(move |_| Msg::CardSelected(i as usize));
+                let on_card_click = ctx.link().callback(move |_| Msg::CardSelected(i));
                 let class;
                 if self.card_selection.is_selected(i) {
                     class = "grid-item selected"
@@ -220,24 +226,28 @@ impl Component for Board {
                 }
 
                 // html! {<button class={class} onclick={on_card_click}><img src={format!("cards/{card}.png")} alt={format!("{card}")}/></button>}
-                html! {<button class={class} onclick={on_card_click}><CardImg card={card.clone()} selected={self.card_selection.is_selected(i)}/>{i}</button>}
+                html! {<button class={class} onclick={on_card_click}><CardImg card={card.clone()} selected={self.card_selection.is_selected(i)}/></button>}
             })
             .collect::<Html>();
 
-        let reset_onclick = _ctx.link().callback(|_| Msg::Reset);
-        let expand_onclick = _ctx.link().callback(|_| Msg::Expand);
+        let reset_onclick = ctx.link().callback(|_| Msg::Reset);
+        let expand_onclick = ctx.link().callback(|_| Msg::Expand);
         // let card0 = self.cards[0];
         html! {<>
-        <h1> {"Welcome to my set clone!"}  </h1>
+        <h1> {"Play set!"}  </h1>
+        <div class="infobox">{format!("{} sets found", self.num_sets)} </div>
+        <div class="infobox">{format!("{} sets available", self.count_sets())} </div>
+        <button onclick={reset_onclick} class="infobox">{"Reset"}</button>
+        if self.times_expanded < 3 && !self.deck.is_empty() {  // 3 times expanded => 21 cards, so we always have a set (cap set problem)
+            <button onclick={expand_onclick} class="infobox">{"Expand"}</button>
+        }
         <div class="grid-container">{grid}</div>
-            <p>{format!("Number of sets found: {}", self.num_sets)}</p>
-            // <CardImg card={self.cards[0].clone()} />
-            if self.times_expanded < 3 && !self.deck.is_empty() {  // 3 times expanded => 21 cards, so we always have a set (cap set problem)
-                <button onclick={expand_onclick}>{"Expand"}</button>
-            }
-            <button onclick={reset_onclick}>{"Reset"}</button>
-            <p>{self.finished.to_string()}</p>
-            </>}
+        // <p>{format!("Number of sets found: {}", self.num_sets)}</p>
+        // <CardImg card={self.cards[0].clone()} />
+
+
+        // <p>{self.finished.to_string()}</p>
+        </>}
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -246,17 +256,16 @@ impl Component for Board {
         }
         match msg {
             Msg::CardSelected(card) => {
-                self.card_selection.add_next_toggle(card).unwrap();
+                if self.card_selection.add_next_toggle(card).is_err() {
+                    return false; // happens when player click card during the delay between selecting 3 cards and processing
+                }
+
                 if self.card_selection.is_full() {
-                    let handle_full_selection = _ctx.link().callback(|_: i64| {
-                        // log::info!("Time before: {:?}", Instant::now());
-                        // fibo(38);
-                        // sleep(time::Duration::from_secs(2));
-                        // let _ = block_on(Delay::new(Duration::from_secs(2)));
-                        // log::info!("Time after: {:?}", Instant::now());
-                        Msg::FullSelection
+                    let handle_full_selection = _ctx.link().callback(|()| Msg::FullSelection);
+                    let timeout = Timeout::new(300, move || {
+                        handle_full_selection.emit(());
                     });
-                    handle_full_selection.emit(0);
+                    timeout.forget();
                 }
                 // if self.deck.is_empty() {
                 //     self.finished = true; // TODO: make screen for when game is finished

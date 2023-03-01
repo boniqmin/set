@@ -175,10 +175,10 @@ impl Display for CardSelection {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Card {
-    pub shape: u32,
-    pub color: u32,
-    pub filling: u32,
-    pub amount: u32,
+    pub shape: u32,   // triangle, square, circle
+    pub color: u32,   // red, green, blue
+    pub filling: u32, // empty, hatched, filled
+    pub amount: u32,  // 1, 2, 3
 }
 
 impl Card {
@@ -194,10 +194,43 @@ impl Card {
 
 impl Display for Card {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        // write!(
+        //     f,
+        //     "{}{}{}{}",
+        //     self.color, self.shape, self.filling, self.amount
+        // )
+        let colorstr = match self.color {
+            0 => "red",
+            1 => "green",
+            2 => "blue",
+            _ => panic!(),
+        };
+
+        let fillstr = match self.filling {
+            0 => "empty",
+            1 => "hatched",
+            2 => "filled",
+            _ => panic!(),
+        };
+
+        let mut shapestr = match self.shape {
+            0 => "triangle",
+            1 => "square",
+            2 => "circle",
+            _ => panic!(),
+        }
+        .to_owned();
+        if self.amount > 0 {
+            shapestr.push('s');
+        }
+
         write!(
             f,
-            "{}{}{}{}",
-            self.color, self.shape, self.filling, self.amount
+            "Card<{} {} {} {}>",
+            self.amount + 1,
+            fillstr,
+            colorstr,
+            shapestr
         )
     }
 }
@@ -294,6 +327,22 @@ pub fn is_set(first: &Card, second: &Card, third: &Card) -> bool {
     }
 }
 
+// fn conjugate_number(first: u32, second: u32) -> u32 {
+//     if first == second {
+//         second
+//     } else {
+//         3 - first - second
+//     }
+// }
+
+// pub fn completing_card(first: &Card, second: &Card) -> Card {
+//     Card {
+//         color: conjugate_number(first.color, second.color),
+//         shape: conjugate_number(first.shape, second.shape),
+//         filling: conjugate_number(first.filling, second.filling),
+//         amount: conjugate_number(first.amount, second.amount),
+//     }
+// }
 // #[cfg(test)]
 // mod tests {
 //     use super::*;
