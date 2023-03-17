@@ -59,8 +59,14 @@ fn card_img(card: &CardProp) -> Html {
     } else {
         "shadow-out"
     };
+    let size;
+    if card.selected {
+        size = "200";
+    } else {
+        size = "180";
+    }
 
-    html! {<svg height={"200"} width={"200"}> // style="background-color:PaleGreen">
+    html! {<svg height={size} width={size} viewBox="0 0 200 200"> // set height and width to change card size
     <rect class={shadow} x="10" y="10" rx="20" ry="20" width="180" height="180"
     style="fill:WhiteSmoke;stroke:SlateGray;stroke-width:5" />{shapes}
     {
@@ -188,7 +194,6 @@ impl Board {
                 for k in 0..j {
                     if is_set(&self.cards[i], &self.cards[j], &self.cards[k]) {
                         set_count += 1;
-                        // log::info!("    {} {} {}", i, j, k)
                     }
                 }
             }
@@ -232,7 +237,7 @@ impl Component for Board {
 
         let reset_onclick = ctx.link().callback(|_| Msg::Reset);
         let expand_onclick = ctx.link().callback(|_| Msg::Expand);
-        // let card0 = self.cards[0];
+
         html! {<>
         <h1> {"Play set!"}  </h1>
         <div class="infobox">{format!("{} sets found", self.num_sets)} </div>
@@ -242,11 +247,6 @@ impl Component for Board {
             <button onclick={expand_onclick} class="infobox">{"Expand"}</button>
         }
         <div class="grid-container">{grid}</div>
-        // <p>{format!("Number of sets found: {}", self.num_sets)}</p>
-        // <CardImg card={self.cards[0].clone()} />
-
-
-        // <p>{self.finished.to_string()}</p>
         </>}
     }
 
@@ -269,7 +269,7 @@ impl Component for Board {
                 }
                 // if self.deck.is_empty() {
                 //     self.finished = true; // TODO: make screen for when game is finished
-                // }
+                // } // game is finished if deck is empty and there are no remaining sets in cards
 
                 if self.cards.is_empty() {
                     self.finished = true;
@@ -300,7 +300,7 @@ impl Component for Board {
                     // if self.deck.is_empty() {
                     //     self.num_sets = 0;
                     //     self.deck = Deck::new_shuffled();
-                    // }
+                    // }  // TODO: potentially add "infinite mode" with this code
                 }
 
                 self.card_selection.clear();

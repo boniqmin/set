@@ -8,8 +8,12 @@
     padding: 0px;
     display: grid;
     grid-auto-flow: column;
-    grid-template-columns: repeat(7, fit-content(100%));
-    grid-template-rows: repeat(3, fit-content(100%));
+    /* grid-template-columns: repeat(7, fit-content(100%)); */
+    grid-template-columns: repeat(7, 200px);
+
+    /* grid-template-rows: repeat(3, fit-content(100%)); */
+    grid-template-rows: repeat(3, 200px);
+
     max-width: 100%;
 }
 

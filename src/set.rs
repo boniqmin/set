@@ -124,7 +124,7 @@ impl CardSelection {
         log::info!("Cards in ctbm: {:?}", cards_to_be_moved);
 
         let new_cards = cards
-            .clone()
+            // .clone()
             .iter()
             .enumerate()
             .filter_map(|(i, card)| {
