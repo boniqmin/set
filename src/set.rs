@@ -1,6 +1,119 @@
-use std::fmt::{Display, Error, Formatter};
+use std::{
+    fmt::{Display, Error, Formatter},
+    mem,
+};
 // use yew::prelude::*;
 use rand::seq::SliceRandom;
+
+pub struct Board {
+    pub cards: Vec<Card>,
+    pub deck: Deck,
+    pub card_selection: CardSelection,
+    pub num_sets: u32,
+    pub times_expanded: u32,
+    pub finished: bool,
+}
+
+impl Board {
+    pub fn new() -> Self {
+        let mut cards = vec![];
+        let mut deck = Deck::new_shuffled();
+        for _i in 0..12 {
+            cards.push(deck.draw().unwrap()); // unwrap is safe as deck is just created
+        }
+        Self {
+            cards,
+            deck,
+            card_selection: CardSelection::new(),
+            num_sets: 0,
+            times_expanded: 0,
+            finished: false,
+        }
+    }
+
+    pub fn reset(&mut self) {
+        let _ = mem::replace(self, Board::new()); // not very nice but ok
+    }
+
+    pub fn expand(&mut self) {
+        for _ in 0..3 {
+            if let Some(card) = self.deck.draw() {
+                // button should be hidden if deck empty, but just to be sure
+                self.cards.push(card);
+            }
+        }
+    }
+
+    pub fn count_sets(&self) -> u32 {
+        // If this is too slow, it is possible to do a O(n^2) implementation if we do a hash lookup
+        // in the cards vector: loop over pairs of cards and check whether the set-completing card
+        // is in the cards hashset
+        let mut set_count = 0;
+        for i in 0..self.cards.len() {
+            for j in 0..i {
+                for k in 0..j {
+                    if is_set(&self.cards[i], &self.cards[j], &self.cards[k]) {
+                        set_count += 1;
+                    }
+                }
+            }
+        }
+        set_count
+    }
+
+    pub fn replace_cards(&mut self) {
+        let mut new_card_opts: Vec<Option<Card>> =
+            self.cards.iter().map(|card| Some(card.clone())).collect();
+        for card_num in &self.card_selection.card_nums {
+            if let Some(i) = card_num {
+                let newcard = self.deck.draw();
+                new_card_opts[*i] = newcard; //newcard.as_ref();
+            }
+        }
+
+        // Filters out the None variants and unpacks the Some variants into cards
+        self.cards = new_card_opts
+            .iter()
+            .filter_map(|card| card.clone())
+            .collect();
+    }
+
+    pub fn remove_cards(&mut self) {
+        // this method removes the cards in the selection from the "cards" Vec, and fills
+        let mut valid_card_nums = self
+            .card_selection
+            .card_nums
+            .iter()
+            .filter_map(|num| num.as_ref())
+            .collect::<Vec<&usize>>();
+        valid_card_nums.sort(); // sort_by(|a, b| b.cmp(a));
+
+        let mut cards_to_be_moved = Vec::new();
+        for i in (self.cards.len() - 3)..self.cards.len() {
+            if !valid_card_nums.contains(&&i) {
+                cards_to_be_moved.push(self.cards[i].clone());
+            }
+        }
+
+        let new_cards = self
+            .cards
+            .iter()
+            .enumerate()
+            .filter_map(|(i, card)| {
+                if i >= self.cards.len() - 3 {
+                    None
+                } else {
+                    if valid_card_nums.contains(&&i) {
+                        Some(cards_to_be_moved.pop().unwrap())
+                    } else {
+                        Some(card.clone())
+                    }
+                }
+            })
+            .collect::<Vec<Card>>();
+        self.cards = new_cards;
+    }
+}
 
 pub struct CardSelection {
     card_nums: Vec<Option<usize>>,
@@ -76,71 +189,6 @@ impl CardSelection {
     //         }
     //     }
     // }
-
-    pub fn replace_cards_from_deck(&self, cards: &mut Vec<Card>, deck: &mut Deck) {
-        // replaces the cards in "cards" at the indices of the selction by new ones from the deck
-        let mut new_card_opts: Vec<Option<Card>> =
-            cards.iter().map(|card| Some(card.clone())).collect();
-        for card_num in &self.card_nums {
-            if let Some(i) = card_num {
-                let newcard = deck.draw();
-                new_card_opts[*i] = newcard; //newcard.as_ref();
-            }
-        }
-
-        // Filters out the None variants and unpacks the Some variants into cards
-        *cards = new_card_opts
-            .iter()
-            .filter_map(|card| card.clone())
-            .collect();
-
-        // let new_cards = Vec::new();
-        // for card_num in card_nums_sorted {
-        //     if card_num.is_some() {
-        //         match self.deck.draw() {
-        //             Some(card) => new_cards.push(card)
-        //         }
-
-        //     }
-        // }
-    }
-
-    // TODO: make this safe
-    pub fn remove_cards(&self, cards: &mut Vec<Card>) {
-        // this method removes the cards in the selection from the "cards" Vec, and fills
-        let mut valid_card_nums = self
-            .card_nums
-            .iter()
-            .filter_map(|num| num.as_ref())
-            .collect::<Vec<&usize>>();
-        valid_card_nums.sort(); // sort_by(|a, b| b.cmp(a));
-
-        let mut cards_to_be_moved = Vec::new();
-        for i in (cards.len() - 3)..cards.len() {
-            if !valid_card_nums.contains(&&i) {
-                cards_to_be_moved.push(cards[i].clone());
-            }
-        }
-        log::info!("Cards in ctbm: {:?}", cards_to_be_moved);
-
-        let new_cards = cards
-            // .clone()
-            .iter()
-            .enumerate()
-            .filter_map(|(i, card)| {
-                if i >= cards.len() - 3 {
-                    None
-                } else {
-                    if valid_card_nums.contains(&&i) {
-                        Some(cards_to_be_moved.pop().unwrap())
-                    } else {
-                        Some(card.clone())
-                    }
-                }
-            })
-            .collect::<Vec<Card>>();
-        *cards = new_cards;
-    }
 
     pub fn clear(&mut self) {
         self.card_nums = vec![None, None, None];

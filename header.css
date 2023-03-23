@@ -1,26 +1,46 @@
 body {
-    background-color: coral;
+    background-color: whitesmoke;
 }
 
 h1 {
-    font: bold italic 40px sans-serif;
-    font-family: "Segoe UI", sans-serif;
+    font: bold 60px sans-serif;
+    font-family: "Chakra Petch", sans-serif;
 }
 
 .infobox {
-    /* display: flex; */
-    /* align-items: center; */
-    /* justify-content: center; */
+    /* display: flex;
+    align-items: center;
+    justify-content: center; */
     background-color: whitesmoke;
     border: 5px solid slategray;
     border-radius: 10px;
+    width: 160px;
+    height: 100px;
+    text-align: center;
+    font: 16px sans-serif;
+    font-family: "Sora", sans-serif;
+    /* vertical-align: middle; */
+    text-align: center;
+    vertical-align: middle;
+    line-height: 100px;
+    display: inline-block;
+    margin: 5px;
+    padding: 0px;
+}
+
+
+.gamebutton {
+    background-color: whitesmoke;
+    border: 5px solid firebrick;
+    border-radius: 10px;
     width: 120px;
     height: 100px;
-    /* text-align: center; */
     font: 16px sans-serif;
-    font-family: "Segoe UI", sans-serif;
+    font-family: "Sora", sans-serif;
     /* vertical-align: middle; */
     display: inline-block;
+    margin: 5px;
+    padding: 0px;
 }
 
 /* .mybutton {
